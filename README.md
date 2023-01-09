@@ -4,7 +4,7 @@
 C. Vriend - Amsterdam UMC - Jan 9 2023
 
 This pipeline can be used to denoise resting-state fMRI data that has been preprocessed using fmriprep. It makes use of the Denoiser tool v1.0.1 - https://github.com/arielletambini/denoiser The tool have been slightly modified to work with python 3.8 and 
-requires the python environment in the denoiserenv.tar.7z file to run without errors, although deprecation warnings will still be produced. 
+requires specific versions of python packages (see requirements.txt) to run without errors, although deprecation warnings will still be produced. 
 
 the following denoising pipelines are implemented:
 24HMP8PhysSpikeReg
@@ -21,7 +21,7 @@ rsfmridenoise_sbatch.sh can be used to run denoising on one subject specified on
 rsfmridenoise_sarray.sh can be used to run denoising on ALL subjects in the fmriprep output directory using a SLURM array.
 
 
-Paths and variables will need to be changed INSIDE the script to specify the denoising pipeline, number of dummy variables to remove, smoothing kernel, etc. 
+Paths and variables will need to be changed INSIDE the script to specify the denoising pipeline, number of dummy scans to remove, smoothing kernel, etc. 
 
 
 
