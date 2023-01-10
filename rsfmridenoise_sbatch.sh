@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# (C) Chris Vriend - AmsUMC - 16-12-2022
+
+
 #SBATCH --job-name=fmridenoise
 #SBATCH --mem=24G
 #SBATCH --partition=luna-cpu-short
