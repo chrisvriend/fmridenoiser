@@ -64,7 +64,7 @@ subj=$(sed "${SLURM_ARRAY_TASK_ID}q;d" ${subjectfile})
 #rm subjects.txt
 
 # select session
-sess=${3}
+sess=${2}
 
 if [ -z "$sess" ]; then
 # sess empty
@@ -80,6 +80,8 @@ scriptdir=/home/anw/cvriend/my-scratch/CONTRO_CASH/denoiser-1.0.1
 module load fsl/6.0.5.1
 module load Anaconda3/2022.05
 synthstrip=/data/anw/anw-gold/NP/doorgeefluik/container_apps/synthstrip.1.2.sif
+
+export APPTAINER_BINDPATH="/data/anw/anw-gold"
 
 # activate denoiser environment
 conda activate /mnt/scratch-01/anw/share/python-env/denoiserenv
@@ -173,7 +175,7 @@ if [ -d ${headdir}/${subj}${sessionpath}func ]; then
         # Perform skullstrip on the mean_func data (=boldref)
         echo -e "skullstrip mean functional image"
         echo
-        ${synthstrip} -i ${headdir}/${subj}${sessionpath}func/${mean_func} \
+        apptainer run --cleanenv ${synthstrip} -i ${headdir}/${subj}${sessionpath}func/${mean_func} \
             -m ${headdir}/${subj}${sessionpath}func/denoised/mask.nii.gz
         echo
         # synthstrip does something weird to the header that leads to
