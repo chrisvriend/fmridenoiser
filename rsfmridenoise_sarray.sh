@@ -95,7 +95,7 @@ TR=2.2                            # repetition time of fMRI
 Ndummy=3                          # number of dummy scans to remove
 lpfilter=0.08                     # low pass filter | typical freq band =0.01 - 0.08 Hz
 hpfilter=0.009                    # highpass filter
-outputspace=T1w # output space
+outputspace=T1w                   # output space
 #####################
 # PIPELINE OPTIONS
 #####################
@@ -317,6 +317,8 @@ if [ -d ${headdir}/${subj}${sessionpath}func ]; then
             else
                 confounds=$(echo "csf csf_derivative1 csf_derivative1_power2 csf_power2 white_matter white_matter_derivative1 white_matter_power2 white_matter_derivative1_power2 trans_x trans_x_derivative1 trans_x_power2 trans_x_derivative1_power2 trans_y trans_y_derivative1 trans_y_derivative1_power2 trans_y_power2 trans_z trans_z_derivative1 trans_z_derivative1_power2 trans_z_power2 rot_x rot_x_derivative1 rot_x_derivative1_power2 rot_x_power2 rot_y rot_y_derivative1 rot_y_derivative1_power2 rot_y_power2 rot_z rot_z_derivative1 rot_z_derivative1_power2 rot_z_power2 global_signal global_signal_derivative1 global_signal_power2 global_signal_derivative1_power2 ${MOTIONOUT}")
             fi
+        elif [[ ${denoise_protocol} == "24HMP8Phys" ]]; then
+                confounds=$(echo "csf csf_derivative1 csf_derivative1_power2 csf_power2 white_matter white_matter_derivative1 white_matter_power2 white_matter_derivative1_power2 trans_x trans_x_derivative1 trans_x_power2 trans_x_derivative1_power2 trans_y trans_y_derivative1 trans_y_derivative1_power2 trans_y_power2 trans_z trans_z_derivative1 trans_z_derivative1_power2 trans_z_power2 rot_x rot_x_derivative1 rot_x_derivative1_power2 rot_x_power2 rot_y rot_y_derivative1 rot_y_derivative1_power2 rot_y_power2 rot_z rot_z_derivative1 rot_z_derivative1_power2 rot_z_power2")
 
             # WORK IN PROGRESS!!
             #  https://neurostars.org/t/fmriprep-acompcor-from-wm-csf-masks/19535/3

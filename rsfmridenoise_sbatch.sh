@@ -57,8 +57,8 @@ fi
 
 scriptdir=/home/anw/cvriend/my-scratch/CONTRO_CASH/denoiser-1.0.1
 # load modules
-module load fsl/6.0.5.1
-module load Anaconda3/2022.05
+module load fsl/6.0.6.5
+module load Anaconda3/2023.03
 synthstrip=/data/anw/anw-gold/NP/doorgeefluik/container_apps/synthstrip.1.2.sif
 
 # activate denoiser environment
@@ -304,6 +304,8 @@ if [ -d ${headdir}/${subj}${sessionpath}func ]; then
             else
                 confounds=$(echo "csf csf_derivative1 csf_derivative1_power2 csf_power2 white_matter white_matter_derivative1 white_matter_power2 white_matter_derivative1_power2 trans_x trans_x_derivative1 trans_x_power2 trans_x_derivative1_power2 trans_y trans_y_derivative1 trans_y_derivative1_power2 trans_y_power2 trans_z trans_z_derivative1 trans_z_derivative1_power2 trans_z_power2 rot_x rot_x_derivative1 rot_x_derivative1_power2 rot_x_power2 rot_y rot_y_derivative1 rot_y_derivative1_power2 rot_y_power2 rot_z rot_z_derivative1 rot_z_derivative1_power2 rot_z_power2 global_signal global_signal_derivative1 global_signal_power2 global_signal_derivative1_power2 ${MOTIONOUT}")
             fi
+        elif [[ ${denoise_protocol} == "24HMP8Phys" ]]; then
+                confounds=$(echo "csf csf_derivative1 csf_derivative1_power2 csf_power2 white_matter white_matter_derivative1 white_matter_power2 white_matter_derivative1_power2 trans_x trans_x_derivative1 trans_x_power2 trans_x_derivative1_power2 trans_y trans_y_derivative1 trans_y_derivative1_power2 trans_y_power2 trans_z trans_z_derivative1 trans_z_derivative1_power2 trans_z_power2 rot_x rot_x_derivative1 rot_x_derivative1_power2 rot_x_power2 rot_y rot_y_derivative1 rot_y_derivative1_power2 rot_y_power2 rot_z rot_z_derivative1 rot_z_derivative1_power2 rot_z_power2")
 
             # WORK IN PROGRESS!!
             #  https://neurostars.org/t/fmriprep-acompcor-from-wm-csf-masks/19535/3
