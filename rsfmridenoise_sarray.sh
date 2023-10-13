@@ -18,7 +18,7 @@
 # scontrol update ArrayTaskThrottle=<count> JobId=<jobID>
 
 #SBATCH --array 1-6%1
-#SBATCH -o output_%A_%a.txt 
+#SBATCH -o fmridenoise_%A_%a.log
 #SBATCH --mail-type=END,FAIL
 
 # By default in SLURM, the emails for events BEGIN, END and FAIL apply to the job array as a whole rather than individual tasks. So:
@@ -65,6 +65,8 @@ subj=$(sed "${SLURM_ARRAY_TASK_ID}q;d" ${subjectfile})
 
 # select session
 sess=${2}
+run=${3}
+
 
 if [ -z "$sess" ]; then
 # sess empty
@@ -73,6 +75,14 @@ sessionfile=_
 else 
 sessionpath=/${sess}/
 sessionfile=_${sess}_
+fi 
+
+
+if [ -z "$run" ]; then
+# sess empty
+runfile=_
+else 
+runfile=_${run}_
 fi 
 
 scriptdir=/scratch/anw/share-np/fmridenoiser/denoiser-1.0.1
@@ -114,15 +124,15 @@ cd ${headdir}
 
 if [ -d ${headdir}/${subj}${sessionpath}func ]; then
 
-    # input filenames
-    funcimage=${subj}${sessionfile}task-rest_space-${outputspace}_desc-preproc_bold.nii.gz
-    mean_func=${subj}${sessionfile}task-rest_space-${outputspace}_boldref.nii.gz
-    regressorfile=${subj}${sessionfile}task-rest_desc-confounds_timeseries.tsv
+   # input filenames
+    funcimage=${subj}${sessionfile}task-rest${run}space-${outputspace}_desc-preproc_bold.nii.gz
+    mean_func=${subj}${sessionfile}task-rest${run}space-${outputspace}_boldref.nii.gz
+    regressorfile=${subj}${sessionfile}task-rest${run}desc-confounds_timeseries.tsv
 
     # define output filenames
-    funcimagenodummy=${subj}${sessionfile}task-rest_space-${outputspace}_desc-preproc_dummy_bold.nii.gz
-    funcimagesmooth=${subj}${sessionfile}task-rest_space-${outputspace}_desc-smooth_bold.nii.gz
-    funcimageNR=${subj}${sessionfile}task-rest_space-${outputspace}_desc-smooth_${denoise_protocol}_bold.nii.gz
+    funcimagenodummy=${subj}${sessionfile}task-rest${run}space-${outputspace}_desc-preproc_dummy_bold.nii.gz
+    funcimagesmooth=${subj}${sessionfile}task-rest${run}space-${outputspace}_desc-smooth_bold.nii.gz
+    funcimageNR=${subj}${sessionfile}task-rest${run}space-${outputspace}_desc-smooth_${denoise_protocol}_bold.nii.gz
 
     outputdir=${headdir}/${subj}${sessionpath}func/denoised
 
@@ -296,6 +306,9 @@ if [ -d ${headdir}/${subj}${sessionpath}func ]; then
 
             echo -e "number of motion outliers for despiking  = $(cat ${subj}${sessionfile}motion_outliers.txt | wc -l)"
 
+        elif [[ ${denoise_protocol} == "24HMP8Phys" ]]; then
+        :
+
         else
             echo -e "denoise protocol not defined"
             exit
@@ -323,6 +336,8 @@ if [ -d ${headdir}/${subj}${sessionpath}func ]; then
             # WORK IN PROGRESS!!
             #  https://neurostars.org/t/fmriprep-acompcor-from-wm-csf-masks/19535/3
             #confounds=$(echo "trans_x trans_x_derivative1 trans_x_power2 trans_x_derivative1_power2 trans_y trans_y_derivative1 trans_y_derivative1_power2 trans_y_power2 trans_z trans_z_derivative1 trans_z_derivative1_power2 trans_z_power2 rot_x rot_x_derivative1 rot_x_derivative1_power2 rot_x_power2 rot_y rot_y_derivative1 rot_y_derivative1_power2 rot_y_power2 rot_z rot_z_derivative1 rot_z_derivative1_power2 rot_z_power2 ${MOTIONOUT}")
+
+        
         else
 
             echo -e "pipeline for denoising not recognized"

@@ -10,6 +10,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --time=00-0:30:00
 #SBATCH --nice=2000
+#SBATCH --output=fmridenoise_%A.log
 
 # usage instructions
 Usage() {
@@ -45,6 +46,7 @@ headdir=${1}
 subj=${2}
 # select session
 sess=${3}
+run=${4}
 
 if [ -z "$sess" ]; then
 # sess empty
@@ -53,6 +55,14 @@ sessionfile=_
 else 
 sessionpath=/${sess}/
 sessionfile=_${sess}_
+fi 
+
+
+if [ -z "$run" ]; then
+# sess empty
+runfile=_
+else 
+runfile=_${run}_
 fi 
 
 scriptdir=/scratch/anw/share-np/fmridenoiser/denoiser-1.0.1
@@ -103,14 +113,14 @@ cd ${headdir}
 if [ -d ${headdir}/${subj}${sessionpath}func ]; then
 
     # input filenames
-    funcimage=${subj}${sessionfile}task-rest_space-${outputspace}_desc-preproc_bold.nii.gz
-    mean_func=${subj}${sessionfile}task-rest_space-${outputspace}_boldref.nii.gz
-    regressorfile=${subj}${sessionfile}task-rest_desc-confounds_timeseries.tsv
+    funcimage=${subj}${sessionfile}task-rest${run}space-${outputspace}_desc-preproc_bold.nii.gz
+    mean_func=${subj}${sessionfile}task-rest${run}space-${outputspace}_boldref.nii.gz
+    regressorfile=${subj}${sessionfile}task-rest${run}desc-confounds_timeseries.tsv
 
     # define output filenames
-    funcimagenodummy=${subj}${sessionfile}task-rest_space-${outputspace}_desc-preproc_dummy_bold.nii.gz
-    funcimagesmooth=${subj}${sessionfile}task-rest_space-${outputspace}_desc-smooth_bold.nii.gz
-    funcimageNR=${subj}${sessionfile}task-rest_space-${outputspace}_desc-smooth_${denoise_protocol}_bold.nii.gz
+    funcimagenodummy=${subj}${sessionfile}task-rest${run}space-${outputspace}_desc-preproc_dummy_bold.nii.gz
+    funcimagesmooth=${subj}${sessionfile}task-rest${run}space-${outputspace}_desc-smooth_bold.nii.gz
+    funcimageNR=${subj}${sessionfile}task-rest${run}space-${outputspace}_desc-smooth_${denoise_protocol}_bold.nii.gz
 
     outputdir=${headdir}/${subj}${sessionpath}func/denoised
 
@@ -283,6 +293,9 @@ if [ -d ${headdir}/${subj}${sessionpath}func ]; then
             rm -f motion_comma.txt
 
             echo -e "${YELLOW}number of motion outliers for despiking  = $(cat ${subj}${sessionfile}motion_outliers.txt | wc -l)${NC}"
+        
+        elif [[ ${denoise_protocol} == "24HMP8Phys" ]]; then
+        :
 
         else
             echo -e "${RED}denoise protocol not defined${NC}"
