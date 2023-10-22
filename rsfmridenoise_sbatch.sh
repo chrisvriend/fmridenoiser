@@ -20,19 +20,18 @@ Usage() {
     (C) Chris Vriend - AmsUMC - 16-12-2022
     script to denoise resting-state functional MRI data processed using fmriprep
     using one of several denoising strategies (see PIPELINE OPTIONS)
-    the folder "denoised" is created in the func folder of the fmriprep output
-    this denoised scan can be used for further processing (e.g. timeseries extraction, ICA or seed-based connectivity)
+    the denoised scan can be used for further processing (e.g. timeseries extraction, ICA or seed-based connectivity)
     a report folder is additionally created with a html file to show spatial maps of the denoising regressors
     Note some 'future' and 'Deprecation' warnings will be shown but this does not affect the results!
 
-    Usage: sbatch ./rsfmridenoise_sbatch.sh <fmriprepdir> <subjID> <session> 
+    Usage: sbatch ./rsfmridenoise_sbatch.sh <fmriprepdir> <subjID> <session> <run>
     Obligatory:
     fmriprepdir = full path to fmriprep directory that contains subject's fmrirep output
     subjID = subject ID according to BIDS (e.g. sub-1000)
 
     Optional:
 	session = session ID of fmriprep output, e.g. ses-T0. keep empty if there are no sessions
-
+    run = run ID of fmri scan, e.g. run-1, keep empty of there are no runs
 	additional options and paths may need to be checked/modified in the script
 
 EOF
@@ -122,9 +121,9 @@ if [ -d ${headdir}/${subj}${sessionpath}func ]; then
     funcimagesmooth=${subj}${sessionfile}task-rest${run}space-${outputspace}_desc-smooth_bold.nii.gz
     funcimageNR=${subj}${sessionfile}task-rest${run}space-${outputspace}_desc-smooth_${denoise_protocol}_bold.nii.gz
 
-    outputdir=${headdir}/${subj}${sessionpath}func/denoised
+    outputdir=${headdir}/${subj}${sessionpath}func
 
-    if [ ! -f ${headdir}/${subj}${sessionpath}func/denoised/${funcimageNR} ]; then
+    if [ ! -f ${headdir}/${subj}${sessionpath}func/${funcimageNR} ]; then
         echo
         echo -e "${GREEN}--------------${NC}"
         echo -e "${GREEN}subj = ${subj}${NC}"
@@ -174,16 +173,16 @@ if [ -d ${headdir}/${subj}${sessionpath}func ]; then
         echo -e "${BLUE}skullstrip mean functional image${NC}"
         echo
         ${synthstrip} -i ${headdir}/${subj}${sessionpath}func/${mean_func} \
-            -m ${headdir}/${subj}${sessionpath}func/denoised/mask.nii.gz
+            -m ${headdir}/${subj}${sessionpath}func/mask.nii.gz
         echo
         # synthstrip does something weird to the header that leads to
         # warning messages in the next step. Therefore we clone the header
         # from the input image
         fslcpgeom ${headdir}/${subj}${sessionpath}func/${mean_func} \
-            ${headdir}/${subj}${sessionpath}func/denoised/mask.nii.gz
+            ${headdir}/${subj}${sessionpath}func/mask.nii.gz
 
         fslmaths ${headdir}/${subj}${sessionpath}func/${funcimagenodummy} \
-            -mas ${headdir}/${subj}${sessionpath}func/denoised/mask.nii.gz \
+            -mas ${headdir}/${subj}${sessionpath}func/mask.nii.gz \
             ${headdir}/${subj}${sessionpath}func/funcimage_BET
 
         echo -e "${BLUE}calculate parameters for SUSAN...${NC}"
@@ -195,19 +194,19 @@ if [ -d ${headdir}/${subj}${sessionpath}func ]; then
         # Use fslmaths to threshold the brain extracted data based on the highpass filter above
         # use "mask" as a binary mask, and Tmin to specify we want the minimum across time
         fslmaths ${headdir}/${subj}${sessionpath}func/funcimage_BET -thr ${p98thr} \
-            -Tmin -bin ${headdir}/${subj}${sessionpath}func/denoised/pre_thr_mask -odt char
+            -Tmin -bin ${headdir}/${subj}${sessionpath}func/pre_thr_mask -odt char
 
-        fslmaths ${headdir}/${subj}${sessionpath}func/funcimage_BET -mas ${headdir}/${subj}${sessionpath}func/denoised/pre_thr_mask \
-            ${headdir}/${subj}${sessionpath}func/denoised/func_data_thresh
+        fslmaths ${headdir}/${subj}${sessionpath}func/funcimage_BET -mas ${headdir}/${subj}${sessionpath}func/pre_thr_mask \
+            ${headdir}/${subj}${sessionpath}func/func_data_thresh
         # We now take this functional data , and create a "mean_func" image that is the mean across time (Tmean)
-        fslmaths ${headdir}/${subj}${sessionpath}func/denoised/func_data_thresh -Tmean \
-            ${headdir}/${subj}${sessionpath}func/denoised/mean_func
+        fslmaths ${headdir}/${subj}${sessionpath}func/func_data_thresh -Tmean \
+            ${headdir}/${subj}${sessionpath}func/mean_func
 
         # To run susan, FSLs tool for noise reduction, we need a brightness threshold.
         # Calculated using fslstats based on
         # https://neurostars.org/t/smoothing-images-by-susan-after-fmriprep/16453/4
         medint=$(fslstats ${headdir}/${subj}${sessionpath}func/funcimage_BET \
-            -k ${headdir}/${subj}${sessionpath}func/denoised/pre_thr_mask -p 50)
+            -k ${headdir}/${subj}${sessionpath}func/pre_thr_mask -p 50)
         brightthresh=$(echo "scale=6; ((${medint}*0.75))" | bc)
         #echo "brightthreshold = ${brightthresh}"
 
@@ -217,24 +216,24 @@ if [ -d ${headdir}/${subj}${sessionpath}func ]; then
 
         ssize=$(echo "scale=11; ((${SKERN}/2.355))" | bc)
 
-        if [ ! -f ${headdir}/${subj}${sessionpath}func/denoised/${funcimagesmooth} ]; then
+        if [ ! -f ${headdir}/${subj}${sessionpath}func/${funcimagesmooth} ]; then
             echo -e "${BLUE}...running SUSAN${NC}"
             # susan uses nonlinear filtering to reduce noise
             # by only averaging a voxel with local voxels which have similar intensity
-            susan ${headdir}/${subj}${sessionpath}func/denoised/func_data_thresh ${brightthresh} ${ssize} 3 1 1 \
-                ${headdir}/${subj}${sessionpath}func/denoised/mean_func ${medint} \
-                ${headdir}/${subj}${sessionpath}func/denoised/func_data_smooth
+            susan ${headdir}/${subj}${sessionpath}func/func_data_thresh ${brightthresh} ${ssize} 3 1 1 \
+                ${headdir}/${subj}${sessionpath}func/mean_func ${medint} \
+                ${headdir}/${subj}${sessionpath}func/func_data_smooth
             # 3 means 3D smoothing
             # 1 says to use a local median filter
             # 1 says that we determine the smoothing area from 1 secondary image, "mean_func" and then we use the same brightness threshold for the secondary image.
             # prefiltered_func_data_smooth is the output image
 
             # Now we mask the smoothed functional data with the mask image, and overwrite the smoothed image.
-            fslmaths ${headdir}/${subj}${sessionpath}func/denoised/func_data_smooth \
-                -mas ${headdir}/${subj}${sessionpath}func/denoised/mask ${headdir}/${subj}${sessionpath}func/denoised/func_data_smooth
+            fslmaths ${headdir}/${subj}${sessionpath}func/func_data_smooth \
+                -mas ${headdir}/${subj}${sessionpath}func/mask ${headdir}/${subj}${sessionpath}func/func_data_smooth
 
-            mv ${headdir}/${subj}${sessionpath}func/denoised/func_data_smooth.nii.gz \
-                ${headdir}/${subj}${sessionpath}func/denoised/${funcimagesmooth}
+            mv ${headdir}/${subj}${sessionpath}func/func_data_smooth.nii.gz \
+                ${headdir}/${subj}${sessionpath}func/${funcimagesmooth}
 
         fi
 
@@ -335,18 +334,16 @@ if [ -d ${headdir}/${subj}${sessionpath}func ]; then
         ###########################################################################
 
         if [ ! -f ${outputdir}/${funcimageNR} ]; then
-            mkdir -p ${outputdir}/report
-            cd ${headdir}/${subj}${sessionpath}func/denoised
+            cd ${headdir}/${subj}${sessionpath}func
             echo
             echo -e "${BLUE}denoising functional image${NC}"
             echo
             echo -e "${YELLOW}stand by for some warning messages :)${NC}"
             sleep 2
-            cp ${scriptdir}/report_template.html ${headdir}/${subj}${sessionpath}func/denoised
 
             python ${scriptdir}/run_denoise.py ${funcimagesmooth} \
                 ${headdir}/${subj}${sessionpath}func/confounders-dummy.tsv \
-                ${outputdir} --out_figure_path ${outputdir}/report \
+                ${outputdir} \
                 --lp_filter ${lpfilter} --hp_filter ${hpfilter} \
                 --col_names ${confounds}
 
@@ -378,15 +375,17 @@ if [ -d ${headdir}/${subj}${sessionpath}func ]; then
         echo "$(jq '.SkullStripped = true' ${temp}.json)" >${temp}.json
         unset temp
         # clean-up
-        rm -f ${headdir}/${subj}${sessionpath}func/denoised/func_data_smooth_usan_size.nii.gz \
+        rm -f ${headdir}/${subj}${sessionpath}func/func_data_smooth_usan_size.nii.gz \
             ${headdir}/${subj}${sessionpath}func/funcimage_BET.nii.gz \
-            ${headdir}/${subj}${sessionpath}func/denoised/mean_func.nii.gz \
-            ${headdir}/${subj}${sessionpath}func/denoised/report_template.html \
-            ${headdir}/${subj}${sessionpath}func/denoised/func_data_thresh.nii.gz \
-            ${headdir}/${subj}${sessionpath}func/denoised/mask.nii.gz \
-            ${headdir}/${subj}${sessionpath}func/denoised/pre_thr_mask.nii.gz
+            ${headdir}/${subj}${sessionpath}func//mean_func.nii.gz \
+            ${headdir}/${subj}${sessionpath}func//report_template.html \
+            ${headdir}/${subj}${sessionpath}func//func_data_thresh.nii.gz \
+            ${headdir}/${subj}${sessionpath}func//mask.nii.gz \
+            ${headdir}/${subj}${sessionpath}func//pre_thr_mask.nii.gz \
+            ${headdir}/${subj}${sessionpath}func/${subj}${sessionfile}task-rest${run}space-${outputspace}_desc-smooth_bold.nii.gz
+
         # optional
-        # rm ${headdir}/${subj}${sessionpath}func/denoised/${funcimagesmooth} \
+        # rm ${headdir}/${subj}${sessionpath}func/${funcimagesmooth} \
 
         echo -e "${GREEN}--------------------------${NC}"
         echo -e "${GREEN}denoising done for ${subj}${NC}"
